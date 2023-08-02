@@ -1,0 +1,21 @@
+.newtitle {
+    margin-bottom: 20px;
+    margin-left: 25px;
+    margin-top: 25px;
+}
+
+.newtitle h1 {
+    font-weight: 800;
+    font-size: 19.5px;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.newtitle span {
+    display: inline;
+    color: #8c8cbc;
+}
+
+.active {
+    display: none;
+}
