@@ -17,7 +17,9 @@ function SideMenu(props) {
 
     const [item, setItem] = useState(null);
     useEffect(() => {
-        axios.get('/rights?_embed=children').then(
+        //侧边栏请求rights数据：
+        //  /rights ? _embed = children
+        axios.get('/servlet/SideMenuServlet').then(
             res => {
 
                 var result = res.data.filter(function (item, index) {
@@ -42,14 +44,15 @@ function SideMenu(props) {
 
     const selectKeys = [props.location.pathname];
     const openKeys = ['/' + props.location.pathname.split('/')[1]];
-    const { role: { rights }, roleId } = JSON.parse(localStorage.getItem('token'));
+    var { role: { rights }, roleId } = JSON.parse(localStorage.getItem('token'));
+    //处理rights
+    rights = JSON.parse(rights)
 
     const checkPagePermission = (item) => {
-
         return item.pagepermisson && rights.includes(item.key);
     };
     const renderMenu = (menuList) => {
-        console.log(menuList)
+
         return menuList?.map(item => {
             if (item.children?.length > 0 && checkPagePermission(item)) {
                 return <SubMenu key={item.key} title={item.title}>
@@ -66,8 +69,6 @@ function SideMenu(props) {
     return (
         <Sider trigger={null} collapsible collapsed={props.isCollapsed}>
             <div className='sider'>
-
-
                 <div className="logo" >
                     文章发布管理系统
                 </div>

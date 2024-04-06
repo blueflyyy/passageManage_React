@@ -12,7 +12,8 @@ const { confirm } = Modal;
 export default function NewsCategory() {
     const [dataSourse, setDataSourse] = useState([]);
     useEffect(() => {
-        axios.get('/categories').then(res => {
+        // /categories
+        axios.get('/servlet/articleCategorySelect').then(res => {
             setDataSourse(res.data);
 
         });
@@ -143,10 +144,19 @@ export default function NewsCategory() {
             return item;
         }));
 
-        axios.patch(`/categories/${record.id}`, {
-            title: record.title,
-            value: record.title
-        });
+        // axios.patch(`/categories/${record.id}`, {
+        //     title: record.title,
+        //     value: record.title
+        // });
+        axios({
+            type: 'get',
+            url: '/servlet/articleCategoryUpdate',
+            params: {
+                id: record.id,
+                title: record.title,
+                value:record.title
+            }
+        })
     };
     {/**删除操作 */ }
     const confirms = (item) => {
@@ -168,7 +178,14 @@ export default function NewsCategory() {
 
         // 当前页面同步状态 + 后端同步
         setDataSourse(dataSourse.filter(data => data.id !== item.id));
-        axios.delete(`/categories/${item.id}`);
+        // axios.delete(`/categories/${item.id}`);
+        axios({
+            type: 'get',
+            url: '/servlet/articleCategoryDelete',
+            params: {
+                id:item.id
+            }
+        })
     };
     return (
         <div>

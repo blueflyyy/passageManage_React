@@ -9,7 +9,15 @@ export default function NewsDraft(props) {
 
     const { username } = JSON.parse(localStorage.getItem('token'));
     useEffect(() => {
-        axios.get(`/news?author=${username}&auditState=0&_expand=category`).then(res => {
+        //草稿箱：根据用户查询草稿箱的数据
+        // /news?author=${username}&auditState=0&_expand=category
+        axios({
+            type: 'get',
+            url: '/servlet/articleDraftSelect',
+            params: {
+                'username':username
+            }
+        }).then(res => {
             const list = res.data;
             setdataSource(list);
         });
@@ -59,9 +67,28 @@ export default function NewsDraft(props) {
 
 
     const handleCheck = (id) => {
-        axios.patch(`/news/${id}`, {
-            auditState: 1
-        }).then(res => {
+        //草稿箱：将文章审核状态设置为审核中
+        // axios.patch(`/news/${id}`, {
+        //     auditState: 1
+        // }).then(res => {
+        //     props.history.push('/audit-manage/list');
+
+        //     notification.info({
+        //         message: '通知',
+        //         description:
+        //             `您可以到${'审核列表'}中查看您的文章`,
+        //         placement: 'bottomRight'
+        //     });
+        // });
+        axios({
+            type: 'get',
+            url: '/servlet/articleDraftAuditState',
+            params: {
+                'id': id,
+                auditState:1
+            }
+        }).then(
+            res => {
             props.history.push('/audit-manage/list');
 
             notification.info({
@@ -70,7 +97,8 @@ export default function NewsDraft(props) {
                     `您可以到${'审核列表'}中查看您的文章`,
                 placement: 'bottomRight'
             });
-        });
+        }
+        )
     };
 
     const confirmMethod = (item) => {
@@ -94,7 +122,15 @@ export default function NewsDraft(props) {
         // 当前页面同步状态 + 后端同步
 
         setdataSource(dataSource.filter(data => data.id !== item.id));
-        axios.delete(`/news/${item.id}`);
+        //草稿箱：删除文章
+        // axios.delete(`/news/${item.id}`);
+        axios({
+            type: 'get',
+            url: '/servlet/articleDelete',
+            params: {
+                id:item.id
+            }
+        })
     };
 
     return (

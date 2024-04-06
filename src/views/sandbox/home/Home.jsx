@@ -20,24 +20,53 @@ export default function Home() {
     const [pieChart, setpieChart] = useState(null);
     const barRef = useRef();
     const pieRef = useRef();
+    const [categorySourse, setCategorySourse] = useState([]);
+    useEffect(() => {
+        // /categories
+        axios.get('/servlet/articleCategorySelect').then(res => {
+            setCategorySourse(res.data);
+        });
+    }, []);
 
     useEffect(() => {
-        axios.get('/news?publishState=2&_expand=category&_sort=view&_order=desc&_limit=6').then(res => {
-            // console.log(res.data)
+        //查找首页文章1
+        // /news?publishState=2&_expand=category&_sort=view&_order=desc&_limit=6
+        axios({
+            type: 'get',
+            url: '/servlet/HomeServlet',
+            params: {
+                sort: "viewCount"
+            }
+        }).then(res => {
             setviewList(res.data);
         });
     }, []);
 
+
     useEffect(() => {
-        axios.get('/news?publishState=2&_expand=category&_sort=star&_order=desc&_limit=6').then(res => {
-            // console.log(res.data)
+        //查找首页文章2
+        // /news?publishState=2&_expand=category&_sort=star&_order=desc&_limit=6
+        axios({
+            type: 'get',
+            url: '/servlet/HomeServlet',
+            params: {
+                sort: "starCount"
+            }
+        }).then(res => {
             setstarList(res.data);
         });
+
     }, []);
 
-    useEffect(() => {
+    const gridStyle = {
+        width: '33.333%',
+        textAlign: 'center',
+    };
 
-        axios.get('/news?publishState=2&_expand=category').then(res => {
+    useEffect(() => {
+        //查找首页文章3
+        ///news?publishState=2&_expand=category
+        axios.get('/servlet/HomeServlet').then(res => {
             // console.log(res.data)
             // console.log()
             renderBarView(_.groupBy(res.data, item => item.category.title));
@@ -45,11 +74,14 @@ export default function Home() {
             setallList(res.data);
         });
 
+
         return () => {
             window.onresize = null;
 
         };
     }, []);
+
+
 
     const renderBarView = (obj) => {
         var myChart = Echarts.init(barRef.current);
@@ -208,6 +240,25 @@ export default function Home() {
                                 </div>
                             }
                         />
+                    </Card>
+                </Col>
+                <Col span={16}>
+                    <Card title="文章分类" >
+                        {/* <List
+                            size="small"
+                            // bordered
+                            dataSource={categorySourse}
+                            renderItem={item => <List.Item>
+                                <a href={`#/news-manage/preview/${item.id}`}>{item.title}</a>
+                            </List.Item>}
+                        /> */}
+                        {
+                            categorySourse.map((item) => (
+                                <Card.Grid style={gridStyle} id="item">
+                                    <a href={`#/home/passage-table/${item.id}`}>{item.title}</a>
+                                </Card.Grid>))
+                        }
+
                     </Card>
                 </Col>
             </Row>

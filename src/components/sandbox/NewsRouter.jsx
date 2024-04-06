@@ -16,6 +16,7 @@ import AuditList from '../../views/sandbox/audit-manage/AuditList';
 import Unpublished from '../../views/sandbox/publish-manage/Unpublished';
 import Published from '../../views/sandbox/publish-manage/Published';
 import Sunset from '../../views/sandbox/publish-manage/Sunset';
+import PassageTable from '../../views/sandbox/home/PassageTable';
 import axios from 'axios';
 import { Spin } from 'antd';
 import { connect } from 'react-redux';
@@ -33,25 +34,37 @@ const LocalRouterMap = {
     '/audit-manage/list': AuditList,
     '/publish-manage/unpublished': Unpublished,
     '/publish-manage/published': Published,
-    '/publish-manage/sunset': Sunset
+    '/publish-manage/sunset': Sunset,
+    '/home/passage-table/:sort': PassageTable
 };
 
 function NewsRouter(props) {
 
     const [BackRouteList, setBackRouteList] = useState([]);
     useEffect(() => {
-        Promise.all([
-            axios.get('/rights'),
-            axios.get('/children'),
-        ]).then(res => {
+        //路由请求
+        // Promise.all([
+        //     axios.get('/rights'),
+        //     axios.get('/children'),
+        // ]).then(res => {
+        //     setBackRouteList([...res[0].data, ...res[1].data]);
 
+        // });
+        Promise.all([
+            axios.get('/servlet/SideMenuServlet'),
+            axios.get('/servlet/newsRouterServlet'),
+        ]).then(res => {
+            console.log(res[0].data)
+            console.log('ffffffffffffffffff')
+            console.log(res[1].data)
             setBackRouteList([...res[0].data, ...res[1].data]);
 
         });
     }, []);
 
-    const { role: { rights }, roleId } = JSON.parse(localStorage.getItem('token'));
-
+    var { role: { rights }, roleId } = JSON.parse(localStorage.getItem('token'));
+    //处理rights
+    rights = JSON.parse(rights)
 
     const checkRoute = (item) => {
         return LocalRouterMap[item.key] && (item.pagepermisson || item.routepermisson);

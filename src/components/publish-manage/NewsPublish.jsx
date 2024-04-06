@@ -14,7 +14,6 @@ export default function NewsPublic(props) {
             render: (title, item) => {
                 return <a href={`#/news-manage/preview/${item.id}`}>
                     {title}
-
                 </a>;
             },
         },

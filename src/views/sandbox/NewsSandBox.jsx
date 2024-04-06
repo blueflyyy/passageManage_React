@@ -26,7 +26,7 @@ export default function NewsSandBox() {
             <Content style={{
                 margin: '24px 16px',
                 padding: 24,
-                minHeight: 280,
+                height: 280,
                 background: colorBgContainer,
                 overflow: 'auto'
             }}>

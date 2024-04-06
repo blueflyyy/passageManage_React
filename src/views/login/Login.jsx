@@ -9,18 +9,37 @@ import axios from 'axios';
 
 export default function Login(props) {
     const onFinish = (values) => {
-
-        axios.get(`/users?username=${values.username}&password=${values.password}&roleState=true&_expand=role`).then(
-            res => {
-
-                if (res.data.length === 0) {
-                    message.error('用户名或密码不匹配');
-                } else {
-                    localStorage.setItem('token', JSON.stringify(res.data[0]));
-                    props.history.push('/');
-                }
+        axios({
+            type: 'get',
+            url: '/servlet/LoginServlet',
+            params: {
+                username: values.username,
+                password: values.password,
+                roleState: true
             }
-        );
+        }).then(res => {
+            if (res.data.length === 0) {
+                message.error('用户名或密码不匹配');
+            } else {
+
+                localStorage.setItem('token', JSON.stringify(res.data[0]));
+                props.history.push('/');
+            }
+        })
+        //Login请求处理
+        // axios.get(`/users?username=${values.username}&password=${values.password}&roleState=true&_expand=role`).then(
+        //     res => {
+
+        //         if (res.data.length === 0) {
+        //             message.error('用户名或密码不匹配');
+        //         } else {
+
+        //             localStorage.setItem('token', JSON.stringify(res.data[0]));
+        //             props.history.push('/');
+        //         }
+        //     }
+        // );  
+
     };
 
     return <div style={{
@@ -78,5 +97,4 @@ export default function Login(props) {
             </Form>
         </div>
     </div>;
-
 }

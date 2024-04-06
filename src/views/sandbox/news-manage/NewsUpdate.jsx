@@ -8,12 +8,14 @@ import NewsEditor from '../../../components/news-manage/NewsEditor';
 const { Step } = Steps;
 const { Option } = Select;
 
+
 export default function NewsUpdate(props) {
     const [current, setCurrent] = useState(0);
     const [categoryList, setCategoryList] = useState([]);
 
     const [formInfo, setformInfo] = useState({});
     const [content, setContent] = useState('');
+    const [type, setType] = useState(1)
 
     // const User = JSON.parse(localStorage.getItem("token"))
     const handleNext = () => {
@@ -27,7 +29,9 @@ export default function NewsUpdate(props) {
             });
         } else {
 
-            if (content === '' || content.trim() === '<p></p>') {
+            if (type === 1 && (content === '' || content.trim() === '<p></p>')) {
+                message.error('文章内容不能为空');
+            } else if (type === 2 && content === '') {
                 message.error('文章内容不能为空');
             } else {
                 setCurrent(current + 1);
@@ -46,44 +50,122 @@ export default function NewsUpdate(props) {
     const NewsForm = useRef(null);
 
     useEffect(() => {
-        axios.get('/categories').then(res => {
+        //在草稿箱中修改文章：查询文章分类数据
+        // /categories
+        axios.get('/servlet/articleCategorySelect').then(res => {
 
             setCategoryList(res.data);
         });
     }, []);
 
     useEffect(() => {
+        //文章：查询文章详情
+        // axios.get(`/news/${props.match.params.id}?_expand=category&_expand=role`).then(res => {
+        //     console.log(res.data);
+        //     let { title, categoryId, content } = res.data;
+        //     console.log(content);
+        //     NewsForm.current.setFieldsValue({
+        //         title,
+        //         categoryId
+        //     });
 
-        axios.get(`/news/${props.match.params.id}?_expand=category&_expand=role`).then(res => {
-            console.log(res.data);
+        //     setContent(content);
+        // });
+
+        axios({
+            type: 'get',
+            url: '/servlet/articleDetail',
+            params: {
+                id: props.match.params.id
+            }
+        }).then(res => {
             let { title, categoryId, content } = res.data;
+
             console.log(content);
             NewsForm.current.setFieldsValue({
                 title,
                 categoryId
             });
+            if (res.data.type === 2) {
+                setType(2)
+                axios({
+                    method: 'post',
+                    url: '/servlet/articleDetailPdf',
+                    params: {
+                        id: props.match.params.id
+                    },
+                    responseType: 'arraybuffer'
+                }).then(res => {
+                    let pdfContent = new Uint8Array(res.data)
+                    setContent(new Blob([pdfContent], { type: 'application/octet-stream' }));
+                });
+            } else {
+                setContent(content)
+            }
 
-            setContent(content);
-        });
+
+
+        })
     }, [props.match.params.id]);
 
-
+    //草稿箱中修改文章后：保存
     const handleSave = (auditState) => {
+        // axios.patch(`/news/${props.match.params.id}`, {
+        //     ...formInfo,
+        //     'content': content,
+        //     'auditState': auditState,
+        // })
+        if (type === 1) {
+            axios({
+                type: 'get',
+                url: '/servlet/articleUpdate',
+                params: {
+                    ...formInfo,
+                    id: props.match.params.id,
+                    content: content,
+                    auditState: auditState,
+                    type: type
+                }
+            }).then(res => {
+                props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
 
-        axios.patch(`/news/${props.match.params.id}`, {
-            ...formInfo,
-            'content': content,
-            'auditState': auditState,
-        }).then(res => {
-            props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
-
-            notification.info({
-                message: '通知',
-                description:
-                    `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
-                placement: 'bottomRight'
+                notification.info({
+                    message: '通知',
+                    description:
+                        `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
+                    placement: 'bottomRight'
+                });
             });
-        });
+        } else {
+
+            const formData = new FormData();
+            formData.append('categoryId', formInfo.categoryId)
+            formData.append('title', formInfo.title)
+            formData.append('type', type)
+            formData.append('auditState', auditState)
+            formData.append('contentblob', content)
+            formData.append('id', props.match.params.id)
+
+            axios.post('/servlet/articleUpdatePdf', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(response => {
+                // pdfData = new Uint8Array(response.data);
+                console.log('File uploaded successfully');
+                props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
+
+                notification.info({
+                    message: '通知',
+                    description:
+                        `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
+                    placement: 'bottomRight'
+                });
+            }).catch(error => {
+                console.error('Error uploading file:', error);
+            });
+        }
+
     };
 
     return (
@@ -137,9 +219,8 @@ export default function NewsUpdate(props) {
 
                 <div className={current === 1 ? '' : 'active'}>
                     <NewsEditor getContent={(value) => {
-
                         setContent(value);
-                    }} content={content}></NewsEditor>
+                    }} content={content} getType={(value) => { setType(value) }} type={type}></NewsEditor>
                 </div>
                 <div className={current === 2 ? '' : 'active'}></div>
 

@@ -12,13 +12,16 @@ export default function NewsAdd(props) {
 
     const [formInfo, setformInfo] = useState({});
     const [content, setContent] = useState('');
+    const [type, setType] = useState(1)
 
     const User = JSON.parse(localStorage.getItem('token'));
     const NewsForm = useRef(null);
 
     useEffect(() => {
-        axios.get('/categories').then(res => {
-        
+        //分类：添加文章时，先请求文章分类的数据
+        // /categories
+        axios.get('/servlet/articleCategorySelect').then(res => {
+
             console.log(res.data)
             setCategoryList(res.data);
         });
@@ -26,21 +29,25 @@ export default function NewsAdd(props) {
     const handleNext = () => {
         if (current === 0) {
             NewsForm.current.validateFields().then(res => {
-                for (let i = 0; i < categoryList.length; i++) { 
-                if (categoryList[i].title === res.categoryId) { 
-                      res.categoryId = categoryList[i].id;
-                      break;
-                     }
-                  }
+                for (let i = 0; i < categoryList.length; i++) {
+                    if (categoryList[i].title === res.categoryId) {
+                        res.categoryId = categoryList[i].id;
+                        break;
+                    }
+                }
                 setformInfo(res);
                 setCurrent(current + 1);
             }).catch(error => {
                 console.log(error);
             });
         } else {
+            console.log(content)
 
-            if (content === '' || content.trim() === '<p></p>') {
+            if (type === 1 && (content === '' || content.trim() === '<p></p>')) {
                 message.error('文章内容不能为空');
+            } else if (content === '') {
+                message.error('文章内容不能为空');
+
             } else {
                 setCurrent(current + 1);
             }
@@ -50,29 +57,73 @@ export default function NewsAdd(props) {
         setCurrent(current - 1);
     };
     const handleSave = (auditState) => {
+        //文章：撰写文章好后提交
+        if (type === 1) {
+            axios(
+                {
+                    type: 'post',
+                    url: '/servlet/articleAdd',
+                    params: {
+                        ...formInfo,
+                        type,
+                        content: content,
+                        region: User.region ? User.region : '全球',
+                        author: User.username,
+                        roleId: User.roleId,
+                        auditState: auditState,
+                        publishState: 0,
+                        createTime: Date.now(),
+                        star: 0,
+                        view: 0,
+                        commentCount: 0
 
-        axios.post('/news', {
-            ...formInfo,
-            'content': content,
-            'region': User.region ? User.region : '全球',
-            'author': User.username,
-            'roleId': User.roleId,
-            'auditState': auditState,
-            'publishState': 0,
-            'createTime': Date.now(),
-            'star': 0,
-            'view': 0,
+                    }
+                }).then(res => {
+                    props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
+                    notification.info({
+                        message: '通知',
+                        description:
+                            `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
+                        placement: 'bottomRight'
+                    });
+                });
+        } else {
 
-        }).then(res => {
-            props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
+            const formData = new FormData();
+            formData.append('categoryId', formInfo.categoryId)
+            formData.append('title', formInfo.title)
+            formData.append('type', type)
+            formData.append('region', User.region ? User.region : '全球')
+            formData.append('author', User.username)
+            formData.append('roleId', User.roleId)
+            formData.append('auditState', auditState)
+            formData.append('publishState', 0)
+            formData.append('createTime', Date.now())
+            formData.append('star', 0)
+            formData.append('view', 0)
+            formData.append('commentCount', 0)
+            formData.append('contentblob', content)
 
-            notification.info({
-                message: '通知',
-                description:
-                    `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
-                placement: 'bottomRight'
+            axios.post('/servlet/publishManagePdfServlet', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(response => {
+                // pdfData = new Uint8Array(response.data);
+                console.log('File uploaded successfully');
+                props.history.push(auditState === 0 ? '/news-manage/draft' : '/audit-manage/list');
+
+                notification.info({
+                    message: '通知',
+                    description:
+                        `您可以到${auditState === 0 ? '草稿箱' : '审核列表'}中查看您的文章`,
+                    placement: 'bottomRight'
+                });
+            }).catch(error => {
+                console.error('Error uploading file:', error);
             });
-        });
+        }
+
     };
     return (
         <div>
@@ -161,7 +212,7 @@ export default function NewsAdd(props) {
                     <NewsEditor getContent={(value) => {
                         console.log(value);
                         setContent(value);
-                    }}></NewsEditor>
+                    }} getType={(value) => { setType(value) }}></NewsEditor>
                 </div>
                 <div style={{ marginTop: 50 }}>
                     {

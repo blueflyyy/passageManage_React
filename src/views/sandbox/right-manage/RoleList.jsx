@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Tag, Popover, Button, Modal, Tree } from 'antd';
+import { Table, Tag, Popover, Button, Modal, Tree ,message} from 'antd';
 import axios from 'axios';
 import { DeleteOutlined, EditOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 const { confirm } = Modal;
+
 
 export default function RoleList() {
     const [dataSource, setDataSource] = useState([]);
@@ -10,6 +11,8 @@ export default function RoleList() {
     const [treeData, setTreeData] = useState([]);
     const [currentKeys, setCurrentKeys] = useState();
     const [currentId, setCurrentId] = useState(0);
+
+    
     const columns = [
         {
             title: 'ID',
@@ -40,7 +43,6 @@ export default function RoleList() {
                         <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
                             <Tree
                                 checkable
-
                                 checkedKeys={currentKeys}
                                 checkStrictly={true}
                                 onCheck={onCheck}
@@ -58,14 +60,11 @@ export default function RoleList() {
     };
 
     const showModal = () => {
-
-
         setIsModalOpen(true);
     };
     const handleOk = () => {
         setIsModalOpen(false);
         setCurrentKeys(currentKeys.checked);
-        console.log('currentkey:', currentKeys);
         setDataSource(dataSource.map(item => {
 
             if (item.id == currentId) {
@@ -76,9 +75,18 @@ export default function RoleList() {
             }
             return item;
         }));
-        axios.patch(`/roles/${currentId}`, {
-            rights: currentKeys.checked
-        });
+        // axios.patch(`/roles/${currentId}`, {
+        //     rights: currentKeys.checked
+        // });
+        axios({
+            type: 'get',
+            url: '/servlet/roleListServlet',
+            params: {
+                id: currentId,
+                flag: 'update',
+                rights:JSON.stringify(currentKeys.checked)
+            }
+        })
     };
     const handleCancel = () => {
         setIsModalOpen(false);
@@ -97,25 +105,43 @@ export default function RoleList() {
         });
     };
     const deleteMethod = (item) => {
-        setDataSource(dataSource.filter(data => data.id !== item.id));
-        axios.delete(`http://localhost:5000/roles/${item.id}`);
+        
+        // axios.delete(`http://localhost:5000/roles/${item.id}`);
+        axios({
+            type: 'get',
+            url:'/servlet/roleListServlet',
+            params: {
+                id: item.id,
+                flag:'delete'
+            }
+        }).then(res => {
+            if (!res.data) {
+                message.error('该角色已被用户绑定，请先取消绑定！')
+            } else {
+                setDataSource(dataSource.filter(data => data.id !== item.id));
+            }
+        })
     };
     useEffect(() => {
-        axios.get('http://localhost:5000/roles').then(
+        // http://localhost:5000/roles
+        axios.get('/servlet/roleSelectServlet').then(
             res => {
-                setDataSource(res.data);
+                let arr = res.data.map(item => {
+                    return {
+                        ...item,
+                        rights:JSON.parse(item.rights)
+                    }
+                })
+                setDataSource(arr);
             }
         );
-
-        axios.get('http://localhost:5000/rights?_embed=children').then(
+        //http://localhost:5000/rights?_embed=children
+        axios.get('/servlet/SideMenuServlet').then(
             res => {
                 setTreeData(res.data);
             }
         );
-    }
-
-
-    , []);
+    }, []);
 
     return (
         <div>

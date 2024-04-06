@@ -8,12 +8,14 @@ import { HeartTwoTone } from '@ant-design/icons';
 export default function Detail(props) {
     const [newsInfo, setnewsInfo] = useState(null);
     useEffect(() => {
-        // console.log()
+        // 文章：（但是这个项目似乎没跑到这里）根据传进来的文章id查询文章详情
         axios.get(`/news/${props.match.params.id}?_expand=category&_expand=role`).then(res => {
             setnewsInfo({
                 ...res.data,
                 view: res.data.view + 1
             });
+            console.log('进来了')
+            debugger
 
             //同步后端
             return res.data;

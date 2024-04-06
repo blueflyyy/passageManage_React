@@ -6,7 +6,19 @@ export default function AuditList(props) {
     const [dataSource, setdataSource] = useState([]);
     const { username } = JSON.parse(localStorage.getItem('token'));
     useEffect(() => {
-        axios(`/news?author=${username}&auditState_ne=0&publishState_lte=1&_expand=category`).then(res => {
+        // axios(`/news?author=${username}&auditState_ne=0&publishState_lte=1&_expand=category`).then(res => {
+
+        //     setdataSource(res.data);
+        // });
+        axios({
+            type: 'get',
+            url: '/servlet/auditListServlet',
+            params: {
+                username,
+                auditState: 0,
+                publishState:1
+            }
+             }).then(res => {
 
             setdataSource(res.data);
         });
@@ -62,9 +74,19 @@ export default function AuditList(props) {
     const handleRervert = (item) => {
         setdataSource(dataSource.filter(data => data.id !== item.id));
 
-        axios.patch(`/news/${item.id}`, {
-            auditState: 0
-        }).then(res => {
+        // axios.patch(`/news/${item.id}`, {
+        //     auditState: 0
+        // })
+        axios({
+            type: 'get',
+            url: '/servlet/articleChangeStateServlet',
+            params: {
+                id: item.id,
+                auditState: 0,
+                publishState:-1
+            }
+        })
+            .then(res => {
             notification.info({
                 message: '通知',
                 description:
@@ -80,10 +102,20 @@ export default function AuditList(props) {
     };
 
     const handlePublish = (item) => {
-        axios.patch(`/news/${item.id}`, {
-            'publishState': 2,
-            'publishTime': Date.now()
-        }).then(res => {
+        // axios.patch(`/news/${item.id}`, {
+        //     'publishState': 2,
+        //     'publishTime': Date.now()
+        // })
+        axios({
+            type: 'get',
+            url: '/servlet/auditPublishServlet',
+            params: {
+                id: item.id,
+                publishState: 2,
+                publishTime:Date.now()
+            }
+        })
+            .then(res => {
             props.history.push('/publish-manage/published');
 
             notification.info({

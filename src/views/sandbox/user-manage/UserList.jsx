@@ -77,7 +77,7 @@ export default function RightList() {
                     <div>
                         <Button danger shape='circle' icon={<DeleteOutlined />} onClick={() => confirmMethod(item)} disabled={item.default}></Button>
 
-                        <Button type='primary' shape='circle' icon={<EditOutlined />} disabled={item.default} onClick={() => { handleUpdate(item); }}></Button >
+                        <Button type='primary' shape='circle' icon={<EditOutlined />} disabled={item._default} onClick={() => { handleUpdate(item); }}></Button >
 
                     </div>
                 );
@@ -86,8 +86,8 @@ export default function RightList() {
     ];
     const { username, region, roleId } = JSON.parse(localStorage.getItem('token'));
     useEffect(() => {
-
-        axios.get('http://localhost:5000/users?_expand=role').then(
+        //http://localhost:5000/users?_expand=role
+        axios.get('/servlet/LoginServlet').then(
             res => {
                 const list = res.data;
 
@@ -100,32 +100,53 @@ export default function RightList() {
         );
     }, [roleId, region, username]);
     useEffect(() => {
-
-        axios.get('/regions').then(
+        // /regions
+        axios.get('/servlet/regionSelectServlet').then(
             res => {
-
                 setregions(res.data);
             }
         );
-        axios.get('/roles').then(
+        // /roles
+        axios.get('/servlet/roleSelectServlet').then(
+  
             res => {
-                setroleList(res.data);
+                let arr = res.data.map(item => {
+                    return {
+                       ...item,
+                       rights : JSON.parse(item.rights)
+                    }
+                   
+                })
+                setroleList(arr);
             }
         );
     }, []);
+    // const handleChange = (item) => {
+    //     item.roleState = !item.roleState;
+    //     setDataSourse([...dataSource]);
+    //     axios.patch(`/users/${item.id}`, {
+    //         roleState: item.roleState
+    //     });
+    // };
     const handleChange = (item) => {
+        console.log("item")
+            console.log(item)
         item.roleState = !item.roleState;
         setDataSourse([...dataSource]);
-        axios.patch(`/users/${item.id}`, {
-            roleState: item.roleState
+        axios({
+            type: 'get',
+            url: '/servlet/userManageServlet',
+            params: {
+               flag:"roleStateChange",
+                id: item.id,
+               roleState:item.roleState
+            }
         });
     };
     const handleUpdate = (item) => {
         setupdate(true);
         setTimeout(() => {
             updateForm.current.setFieldsValue(item);
-
-
         });
         setcurrent(item);
         if (item.roleId === 1) {
@@ -152,22 +173,40 @@ export default function RightList() {
     };
     const deleteMethod = (item) => {
         setDataSourse(dataSource.filter(data => data.id !== item.id));
-        axios.delete(`/users/${item.id}`);
-
+        //axios.delete(`/users/${item.id}`);
+        axios({
+            type: 'get',
+            url: '/servlet/userManageServlet',
+            params: {
+               flag:"delete",
+                id: item.id
+            }
+        });
     };
     const addFormOk = () => {
         addForm.current.validateFields().then(
             value => {
                 setopen(false);
                 addForm.current.resetFields();
-                axios.post('/users', {
-                    ...value,
-                    'roleState': true,
-                    'default': false
-                }).then(res => {
-                    console.log(res.data);
+      
+                // axios.post('/users', {
+                //     ...value,
+                //     'roleState': true,
+                //     '_default': false
+                // }).
+        axios({
+            type: 'get',
+            url: '/servlet/userManageServlet',
+            params: {
+               flag:"insert",
+                ...value,
+                roleState: true,
+               '_default':false
+            }
+        }).then(res => {
+
                     setDataSourse([...dataSource, {
-                        ...res.data,
+                        ...res.data[0],
                         role: roleList.filter(item => item.id === value.roleId)[0]
                     }]);
 
@@ -190,7 +229,16 @@ export default function RightList() {
                 return item;
             }));
             setisUpdateDisabled(!isUpdateDisabled);
-            axios.patch(`/users/${current.id}`, value);
+            // axios.patch(`/users/${current.id}`, value);
+            axios({
+            type: 'get',
+            url: '/servlet/userManageServlet',
+            params: {
+                flag: "update",
+                id:current.id,
+                ...value
+            }
+        })
         });
     };
     return (

@@ -10,9 +10,16 @@ export default function Audit() {
             '2': 'admin',
             '3': 'editor'
         };
-        axios.get('/news?auditState=1&_expand=category').then(res => {
+        // /news?auditState=1&_expand=category
+        axios({
+            type: 'get',
+            url: '/servlet/auditArticleServlet',
+            params: {
+                auditState:1
+            }
+        }).then(res => {
             const list = res.data;
-            console.log(list)
+ 
             setdataSource(roleObj[roleId] === 'superadmin' ? list : [
                 ...list.filter(item => item.author === username),
                 ...list.filter(item => item.region === region && roleObj[item.roleId] === 'editor')
@@ -45,8 +52,7 @@ export default function Audit() {
             dataIndex: 'category',
             key: 'category',
             render: (category) => {
-                  console.log("title:"+category);
-                console.log("item:"+category.title)
+
                 return <div>{category.title}
                 </div>;
             }
@@ -65,10 +71,18 @@ export default function Audit() {
     const handleAudit = (item, auditState, publishState) => {
         setdataSource(dataSource.filter(data => data.id !== item.id));
 
-        axios.patch(`/news/${item.id}`, {
-            auditState,
-            publishState
-        }).then(res => {
+        // axios.patch(`/news/${item.id}`, {
+        //     auditState,
+        //     publishState
+        // })
+        axios({
+            type: 'get',
+            url: '/servlet/articleChangeStateServlet',
+            params: {
+                id: item.id,
+                auditState,
+                publishState          
+            }}).then(res => {
             notification.info({
                 message: '通知',
                 description:

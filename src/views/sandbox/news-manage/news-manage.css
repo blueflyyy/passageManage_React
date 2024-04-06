@@ -19,3 +19,12 @@
 .active {
     display: none;
 }
+
+.like {
+    margin-right: 2px;
+}
+
+.liked {
+    margin-right: 2px;
+    color: blue;
+}
