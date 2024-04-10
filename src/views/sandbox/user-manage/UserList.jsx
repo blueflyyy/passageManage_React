@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, Button, Modal, Switch } from 'antd';
+import { Table, Button, Modal, Switch, message } from 'antd';
 import axios from 'axios';
 import { DeleteOutlined, EditOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import UserForm from '../../../components/user-manage/UserForm';
@@ -8,7 +8,7 @@ import UserForm from '../../../components/user-manage/UserForm';
 
 const { confirm } = Modal;
 
-export default function RightList() {
+export default function RightList(props) {
 
 
 
@@ -108,14 +108,14 @@ export default function RightList() {
         );
         // /roles
         axios.get('/servlet/roleSelectServlet').then(
-  
+
             res => {
                 let arr = res.data.map(item => {
                     return {
-                       ...item,
-                       rights : JSON.parse(item.rights)
+                        ...item,
+                        rights: JSON.parse(item.rights)
                     }
-                   
+
                 })
                 setroleList(arr);
             }
@@ -130,16 +130,16 @@ export default function RightList() {
     // };
     const handleChange = (item) => {
         console.log("item")
-            console.log(item)
+        console.log(item)
         item.roleState = !item.roleState;
         setDataSourse([...dataSource]);
         axios({
             type: 'get',
             url: '/servlet/userManageServlet',
             params: {
-               flag:"roleStateChange",
+                flag: "roleStateChange",
                 id: item.id,
-               roleState:item.roleState
+                roleState: item.roleState
             }
         });
     };
@@ -173,37 +173,48 @@ export default function RightList() {
     };
     const deleteMethod = (item) => {
         setDataSourse(dataSource.filter(data => data.id !== item.id));
+
         //axios.delete(`/users/${item.id}`);
         axios({
             type: 'get',
             url: '/servlet/userManageServlet',
             params: {
-               flag:"delete",
+                flag: "delete",
                 id: item.id
             }
-        });
+        }).then((res) => {
+            if (res.data) {
+                message.success("删除成功！")
+                if (item.id === roleId) {
+                    localStorage.removeItem('token');
+                    props.history.push('./login');
+                }
+            } else {
+                message.error("删除失败！")
+            }
+        })
     };
     const addFormOk = () => {
         addForm.current.validateFields().then(
             value => {
                 setopen(false);
                 addForm.current.resetFields();
-      
+
                 // axios.post('/users', {
                 //     ...value,
                 //     'roleState': true,
                 //     '_default': false
                 // }).
-        axios({
-            type: 'get',
-            url: '/servlet/userManageServlet',
-            params: {
-               flag:"insert",
-                ...value,
-                roleState: true,
-               '_default':false
-            }
-        }).then(res => {
+                axios({
+                    type: 'get',
+                    url: '/servlet/userManageServlet',
+                    params: {
+                        flag: "insert",
+                        ...value,
+                        roleState: true,
+                        '_default': false
+                    }
+                }).then(res => {
 
                     setDataSourse([...dataSource, {
                         ...res.data[0],
@@ -231,19 +242,32 @@ export default function RightList() {
             setisUpdateDisabled(!isUpdateDisabled);
             // axios.patch(`/users/${current.id}`, value);
             axios({
-            type: 'get',
-            url: '/servlet/userManageServlet',
-            params: {
-                flag: "update",
-                id:current.id,
-                ...value
-            }
-        })
+                type: 'get',
+                url: '/servlet/userManageServlet',
+                params: {
+                    flag: "update",
+                    id: current.id,
+                    ...value
+                }
+            }).then((res) => {
+                if (res.data) {
+                    if (current.id === roleId) {
+                        message.success("更新成功，请重新登录！")
+                        localStorage.removeItem('token');
+                        props.history.push('./login');
+                    } else {
+                        message.success("更新成功！")
+                    }
+                } else {
+                    message.error("更新失败！")
+                }
+
+            })
         });
     };
     return (
         <div>
-            <Button type="primary" onClick={() => { setopen(true); }}>添加用户</Button>
+            <Button type="primary" onClick={() => { setopen(true); }} disabled={roleId === 3 ? true : false}>添加用户</Button>
             <Table dataSource={dataSource} columns={column} pagination={{ pageSize: 5 }} rowKey={(item) => item.id} />
             <Modal
                 open={open}

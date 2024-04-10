@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Tag, Popover, Button, Modal, Tree ,message} from 'antd';
+import { Table, Tag, Popover, Button, Modal, Tree, message } from 'antd';
 import axios from 'axios';
 import { DeleteOutlined, EditOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 const { confirm } = Modal;
@@ -12,7 +12,7 @@ export default function RoleList() {
     const [currentKeys, setCurrentKeys] = useState();
     const [currentId, setCurrentId] = useState(0);
 
-    
+
     const columns = [
         {
             title: 'ID',
@@ -62,6 +62,7 @@ export default function RoleList() {
     const showModal = () => {
         setIsModalOpen(true);
     };
+    const User = JSON.parse(localStorage.getItem('token'));
     const handleOk = () => {
         setIsModalOpen(false);
         setCurrentKeys(currentKeys.checked);
@@ -84,7 +85,28 @@ export default function RoleList() {
             params: {
                 id: currentId,
                 flag: 'update',
-                rights:JSON.stringify(currentKeys.checked)
+                rights: JSON.stringify(currentKeys.checked)
+            }
+        }).then((res) => {
+            if (res.data) {
+                axios({
+                    type: 'get',
+                    url: '/servlet/LoginServlet',
+                    params: {
+                        username: User.username,
+                        password: User.password,
+                        roleState: true
+                    }
+                }).then(res => {
+                    if (res.data.length === 0) {
+                        message.error('用户名或密码不匹配');
+                    } else {
+
+                        localStorage.setItem('token', JSON.stringify(res.data[0]));
+                        window.location.reload();
+                    }
+                })
+
             }
         })
     };
@@ -105,14 +127,14 @@ export default function RoleList() {
         });
     };
     const deleteMethod = (item) => {
-        
+
         // axios.delete(`http://localhost:5000/roles/${item.id}`);
         axios({
             type: 'get',
-            url:'/servlet/roleListServlet',
+            url: '/servlet/roleListServlet',
             params: {
                 id: item.id,
-                flag:'delete'
+                flag: 'delete'
             }
         }).then(res => {
             if (!res.data) {
@@ -129,7 +151,7 @@ export default function RoleList() {
                 let arr = res.data.map(item => {
                     return {
                         ...item,
-                        rights:JSON.parse(item.rights)
+                        rights: JSON.parse(item.rights)
                     }
                 })
                 setDataSource(arr);
@@ -138,7 +160,19 @@ export default function RoleList() {
         //http://localhost:5000/rights?_embed=children
         axios.get('/servlet/SideMenuServlet').then(
             res => {
-                setTreeData(res.data);
+                var result = res.data.filter(item => {
+                    if (item.children.length === 0) {
+                        item.children = null
+                    } else {
+                        item.children = item.children.filter(i =>
+                            i.pagepermisson === 1
+                        )
+                    }
+                    return item;
+
+                })
+
+                setTreeData(result);
             }
         );
     }, []);

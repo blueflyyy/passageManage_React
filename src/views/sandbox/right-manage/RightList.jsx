@@ -41,7 +41,7 @@ export default function RightList() {
                             <div style={{ textAlign: 'center' }}>
                                 <Switch checked={item.pagepermisson} onChange={() => switchMethod(item)}></Switch>
                             </div>
-                        } title="页面配置项" trigger={item.pagepermisson === undefined ? '' : 'click'}>
+                        } title="页面配置项" trigger={item.pagepermisson === -1 ? '' : 'click'}>
                             <Button type='primary' shape='circle' icon={<EditOutlined />} disabled={item.pagepermisson === -1}></Button>
                         </Popover>
                     </div>
@@ -79,7 +79,7 @@ export default function RightList() {
                 params: {
                     id: item.id,
                     pagepermisson: item.pagepermisson,
-                    flag:'rightUpdate'
+                    flag: 'rightUpdate'
                 }
             })
         } else {
@@ -92,7 +92,7 @@ export default function RightList() {
                 params: {
                     id: item.id,
                     pagepermisson: item.pagepermisson,
-                    flag:'childrenUpdate'
+                    flag: 'childrenUpdate'
                 }
             })
         }
@@ -116,20 +116,20 @@ export default function RightList() {
     };
     const deleteMethod = (item) => {
         if (item.grade === 1) {
-           
+
             // axios.delete(`http://localhost:5000/rights/${item.id}`);
             axios({
                 type: 'get',
                 url: '/servlet/rightListServlet',
                 params: {
                     id: item.id,
-                    flag:'rightDelete'
+                    flag: 'rightDelete'
                 }
             }).then(res => {
                 if (!res.data) {
-                     message.error('该权限有相关联的子权限，请先移除子权限！')
+                    message.error('该权限有相关联的子权限，请先移除子权限！')
                 } else {
-                     setDataSourse(dataSource.filter(data => data.id !== item.id));
+                    setDataSourse(dataSource.filter(data => data.id !== item.id));
                 }
             })
         } else {
@@ -144,7 +144,11 @@ export default function RightList() {
                 url: '/servlet/rightListServlet',
                 params: {
                     id: item.id,
-                    flag:'childrenDelete'
+                    flag: 'childrenDelete'
+                }
+            }).then((res) => {
+                if (res.data) {
+                    window.location.reload();
                 }
             })
         }
